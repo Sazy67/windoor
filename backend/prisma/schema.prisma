@@ -1,0 +1,271 @@
+// Windoor Inventory Management System - Database Schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// User entity for authentication and audit trail
+model User {
+  id          String   @id @default(uuid())
+  username    String   @unique
+  displayName String
+  role        String?  // For future RBAC
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  // Relations
+  productsCreated       Product[]          @relation("ProductCreator")
+  stockEntries          StockEntry[]
+  stockExits            StockExit[]
+  sales                 Sale[]
+  orders                Order[]
+  returns               Return[]
+}
+
+// Product entity - base product information
+model Product {
+  id           String   @id @default(uuid())
+  name         String
+  category     String   // Gate, Window, Panel, Accessory, Consumable
+  subcategory  String?  // Interior_Gate, Exterior_Gate, etc.
+  brand        String
+  isEndOfLife  Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  createdById  String
+  createdBy    User     @relation("ProductCreator", fields: [createdById], references: [id])
+
+  // Relations
+  variants ProductVariant[]
+
+  @@index([category])
+  @@index([name])
+}
+
+// ProductVariant entity - specific product variations
+model ProductVariant {
+  id                String   @id @default(uuid())
+  productId         String
+  product           Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  color             String?
+  dimension         String
+  type              String?
+  material          String?
+  salePrice         Float
+  minimumStockLevel Int      @default(10)
+  sku               String   @unique
+  createdAt         DateTime @default(now())
+
+  // Relations
+  stock              Stock?
+  stockEntries       StockEntry[]
+  stockExits         StockExit[]
+  saleItems          SaleItem[]
+  reservationItems   ReservationOrderItem[]
+  returnItems        ReturnItem[]
+
+  @@unique([productId, color, dimension, type, material])
+  @@index([sku])
+  @@index([productId])
+}
+
+
+// Stock entity - current stock levels
+model Stock {
+  id                   String         @id @default(uuid())
+  variantId            String         @unique
+  variant              ProductVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
+  quantity             Int            @default(0)
+  secondQualityQty     Int            @default(0)
+  lastUpdated          DateTime       @updatedAt
+
+  @@index([variantId])
+}
+
+// StockEntry entity - product entries into inventory
+model StockEntry {
+  id              String         @id @default(uuid())
+  variantId       String
+  variant         ProductVariant @relation(fields: [variantId], references: [id])
+  quantity        Int
+  entryDate       DateTime       @default(now())
+  isSecondQuality Boolean        @default(false)
+  notes           String?
+  createdAt       DateTime       @default(now())
+  createdById     String
+  createdBy       User           @relation(fields: [createdById], references: [id])
+
+  @@index([variantId])
+  @@index([entryDate])
+}
+
+// StockExit entity - product exits from inventory
+model StockExit {
+  id          String         @id @default(uuid())
+  variantId   String
+  variant     ProductVariant @relation(fields: [variantId], references: [id])
+  quantity    Int
+  exitDate    DateTime       @default(now())
+  reason      String         // Sale, Order_Fulfillment, Damage, Other
+  referenceId String?        // Sale or Order ID
+  notes       String?
+  createdAt   DateTime       @default(now())
+  createdById String
+  createdBy   User           @relation(fields: [createdById], references: [id])
+
+  @@index([variantId])
+  @@index([exitDate])
+  @@index([reason])
+}
+
+// Customer entity
+model Customer {
+  id        String   @id @default(uuid())
+  name      String
+  phone     String?
+  email     String?
+  address   String?
+  createdAt DateTime @default(now())
+
+  // Relations
+  sales   Sale[]
+  orders  Order[]
+  returns Return[]
+
+  @@index([name])
+}
+
+// Sale entity - completed sales
+model Sale {
+  id          String     @id @default(uuid())
+  customerId  String
+  customer    Customer   @relation(fields: [customerId], references: [id])
+  saleDate    DateTime   @default(now())
+  totalAmount Float
+  notes       String?
+  createdAt   DateTime   @default(now())
+  createdById String
+  createdBy   User       @relation(fields: [createdById], references: [id])
+
+  // Relations
+  items SaleItem[]
+
+  @@index([customerId])
+  @@index([saleDate])
+}
+
+// SaleItem entity - items in a sale
+model SaleItem {
+  id        String         @id @default(uuid())
+  saleId    String
+  sale      Sale           @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  variantId String
+  variant   ProductVariant @relation(fields: [variantId], references: [id])
+  quantity  Int
+  unitPrice Float
+  lineTotal Float
+
+  @@index([saleId])
+  @@index([variantId])
+}
+
+
+// Order entity - base order (custom or reservation)
+model Order {
+  id          String   @id @default(uuid())
+  orderType   String   // Custom, Reservation
+  customerId  String
+  customer    Customer @relation(fields: [customerId], references: [id])
+  orderDate   DateTime @default(now())
+  status      String
+  notes       String?
+  createdAt   DateTime @default(now())
+  createdById String
+  createdBy   User     @relation(fields: [createdById], references: [id])
+
+  // Relations
+  customOrder      CustomOrder?
+  reservationOrder ReservationOrder?
+
+  @@index([customerId])
+  @@index([orderType])
+  @@index([status])
+}
+
+// CustomOrder entity - custom production orders
+model CustomOrder {
+  id               String   @id @default(uuid())
+  orderId          String   @unique
+  order            Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productType      String   // Gate, Window, Panel, Accessory, Consumable
+  dimensions       String
+  specifications   String?
+  deliveryDeadline DateTime
+  status           String   // Order_Received, In_Production, Completed
+
+  @@index([status])
+  @@index([deliveryDeadline])
+}
+
+// ReservationOrder entity - stock reservation orders
+model ReservationOrder {
+  id      String @id @default(uuid())
+  orderId String @unique
+  order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  status  String // Reserved, Delivered
+
+  // Relations
+  items ReservationOrderItem[]
+
+  @@index([status])
+}
+
+// ReservationOrderItem entity - items in reservation order
+model ReservationOrderItem {
+  id                 String           @id @default(uuid())
+  reservationOrderId String
+  reservationOrder   ReservationOrder @relation(fields: [reservationOrderId], references: [id], onDelete: Cascade)
+  variantId          String
+  variant            ProductVariant   @relation(fields: [variantId], references: [id])
+  quantity           Int
+
+  @@index([reservationOrderId])
+  @@index([variantId])
+}
+
+// Return entity - product returns
+model Return {
+  id          String   @id @default(uuid())
+  customerId  String
+  customer    Customer @relation(fields: [customerId], references: [id])
+  returnDate  DateTime @default(now())
+  reason      String
+  createdAt   DateTime @default(now())
+  createdById String
+  createdBy   User     @relation(fields: [createdById], references: [id])
+
+  // Relations
+  items ReturnItem[]
+
+  @@index([customerId])
+  @@index([returnDate])
+}
+
+// ReturnItem entity - items in a return
+model ReturnItem {
+  id              String         @id @default(uuid())
+  returnId        String
+  return          Return         @relation(fields: [returnId], references: [id], onDelete: Cascade)
+  variantId       String
+  variant         ProductVariant @relation(fields: [variantId], references: [id])
+  quantity        Int
+  isSecondQuality Boolean        @default(false)
+
+  @@index([returnId])
+  @@index([variantId])
+}

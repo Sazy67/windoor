@@ -19,6 +19,7 @@ const navigation = [
   { name: 'İadeler',        path: '/returns',       icon: '↺'              },
   { name: 'Müşteriler',     path: '/customers',     icon: '◯'              },
   { name: 'Raporlar',       path: '/reports',       icon: '◬'              },
+  { name: 'Yardım',         path: '/help',           icon: '?',  exact: true },
 ];
 
 export default function Layout({ children, user, onLogout }: LayoutProps) {

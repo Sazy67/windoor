@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import morgan from 'morgan';
 import dotenv from 'dotenv';
+import path from 'path';
 import { PrismaClient } from '@prisma/client';
 
 // Routes
@@ -27,6 +28,12 @@ app.use(cors());
 app.use(express.json());
 app.use(morgan('dev'));
 
+// ngrok browser warning bypass
+app.use((req, res, next) => {
+  res.setHeader('ngrok-skip-browser-warning', 'true');
+  next();
+});
+
 // Health check
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
@@ -41,6 +48,17 @@ app.use('/api/returns', returnRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/customers', customerRoutes);
+
+// Serve frontend static files if built
+const publicDir = path.join(__dirname, '..', 'public');
+app.use(express.static(publicDir));
+// SPA fallback — serve index.html for all non-API routes
+app.get('*', (req, res) => {
+  const indexPath = path.join(publicDir, 'index.html');
+  res.sendFile(indexPath, (err) => {
+    if (err) res.status(404).json({ error: 'Not found' });
+  });
+});
 
 // Error handling middleware
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {

@@ -36,5 +36,9 @@ lerna-debug.log*
 *.db-journal
 # NOT: prisma/migrations/ intentionally NOT ignored — needed for deployment
 
+# Build output
+backend/public/
+frontend/dist/
+
 # OS
 Thumbs.db

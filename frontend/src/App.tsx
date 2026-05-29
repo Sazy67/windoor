@@ -13,6 +13,7 @@ import Returns from './pages/Returns';
 import Customers from './pages/Customers';
 import StockDetail from './pages/StockDetail';
 import SalesHistory from './pages/SalesHistory';
+import Help from './pages/Help';
 import type { User } from './lib/api';
 
 // ── Theme Context ──────────────────────────────────────────
@@ -86,6 +87,7 @@ function App() {
               <Route path="/customers" element={<Customers />} />
               <Route path="/stock/:variantId" element={<StockDetail />} />
               <Route path="/reports" element={<Reports />} />
+              <Route path="/help" element={<Help />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </Layout>

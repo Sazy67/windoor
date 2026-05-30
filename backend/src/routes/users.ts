@@ -5,6 +5,7 @@ import jwt from 'jsonwebtoken';
 import { prisma } from '../lib/prisma';
 import { validate, getParam } from '../utils/helpers';
 import { authenticateToken, requireAdmin } from '../middleware/auth';
+import { addLog } from '../lib/logger';
 
 const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'windoor-dev-secret';
@@ -41,6 +42,14 @@ router.post('/login',
         JWT_SECRET,
         { expiresIn: '7d' }
       );
+
+      addLog({
+        timestamp: new Date().toISOString(),
+        action: 'Giriş',
+        user: user.username,
+        detail: `${user.displayName} · ${user.role}`,
+        status: 'ok',
+      });
 
       res.json({
         token,

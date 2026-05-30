@@ -2,6 +2,7 @@ import express from 'express';
 import { body, param, query } from 'express-validator';
 import { prisma } from '../lib/prisma';
 import { validate, getParam } from '../utils/helpers';
+import { addLog } from '../lib/logger';
 
 const router = express.Router();
 
@@ -121,6 +122,14 @@ router.post('/',
           });
         }
         return newSale;
+      });
+
+      addLog({
+        timestamp: new Date().toISOString(),
+        action: 'Satış',
+        user: req.user?.username || '-',
+        detail: `${customer.name} · ${sale.items.length} ürün · ${totalAmount.toLocaleString('tr-TR', { style: 'currency', currency: 'TRY' })}`,
+        status: 'ok',
       });
 
       res.status(201).json(sale);

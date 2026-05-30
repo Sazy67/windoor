@@ -2,6 +2,7 @@ import express from 'express';
 import { body, param, query } from 'express-validator';
 import { prisma } from '../lib/prisma';
 import { validate, getParam } from '../utils/helpers';
+import { addLog } from '../lib/logger';
 
 const router = express.Router();
 
@@ -87,6 +88,13 @@ router.post('/custom',
         },
         include: orderInclude
       });
+      addLog({
+        timestamp: new Date().toISOString(),
+        action: 'Özel Üretim Siparişi',
+        user: req.user?.username || '-',
+        detail: `${customer.name} · ${productType} · ${dimensions}`,
+        status: 'ok',
+      });
       res.status(201).json(order);
     } catch (error) { next(error); }
   }
@@ -160,6 +168,13 @@ router.post('/reservation',
         return newOrder;
       });
 
+      addLog({
+        timestamp: new Date().toISOString(),
+        action: 'Rezervasyon Siparişi',
+        user: req.user?.username || '-',
+        detail: `${customer.name} · ${items.length} ürün`,
+        status: 'ok',
+      });
       res.status(201).json(order);
     } catch (error) { next(error); }
   }
@@ -270,6 +285,13 @@ router.post('/:id/deliver',
         return { sale, orderId };
       });
 
+      addLog({
+        timestamp: new Date().toISOString(),
+        action: 'Rezervasyon Teslimi',
+        user: req.user?.username || '-',
+        detail: `${order.customer.name} · ${result.sale.totalAmount.toLocaleString('tr-TR', { style: 'currency', currency: 'TRY' })}`,
+        status: 'ok',
+      });
       res.status(201).json(result);
     } catch (error) { next(error); }
   }

@@ -2,6 +2,7 @@ import express from 'express';
 import { body, param, query } from 'express-validator';
 import { prisma } from '../lib/prisma';
 import { validate, getParam } from '../utils/helpers';
+import { addLog } from '../lib/logger';
 
 const router = express.Router();
 
@@ -188,6 +189,15 @@ router.post('/entry',
         return entry;
       });
 
+      const variantInfo = await prisma.productVariant.findUnique({ where: { id: variantId }, include: { product: true } });
+      addLog({
+        timestamp: new Date().toISOString(),
+        action: isSecondQuality ? 'Stok Girişi (2.Kalite)' : 'Stok Girişi',
+        user: req.user?.username || '-',
+        detail: `${variantInfo?.product?.name || variantId} · ${quantity} adet`,
+        status: 'ok',
+      });
+
       res.status(201).json(result);
     } catch (error) { next(error); }
   }
@@ -229,6 +239,15 @@ router.post('/exit',
           data: { quantity: { decrement: quantity } }
         });
         return exit;
+      });
+
+      const variantInfo2 = await prisma.productVariant.findUnique({ where: { id: variantId }, include: { product: true } });
+      addLog({
+        timestamp: new Date().toISOString(),
+        action: 'Stok Çıkışı',
+        user: req.user?.username || '-',
+        detail: `${variantInfo2?.product?.name || variantId} · ${quantity} adet · Sebep: ${reason}`,
+        status: 'ok',
       });
 
       res.status(201).json(result);

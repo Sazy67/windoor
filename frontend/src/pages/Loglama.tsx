@@ -6,21 +6,24 @@ const API = import.meta.env.VITE_API_URL || '/api';
 interface LogEntry {
   id: number;
   timestamp: string;
-  method: string;
-  path: string;
-  status: number;
-  duration: number;
+  action: string;
   user: string;
-  ip: string;
+  detail: string;
+  status: 'ok' | 'error';
+  error?: string;
 }
 
-const METHOD_COLOR: Record<string, string> = {
-  GET: '#3b82f6', POST: '#22c55e', PUT: '#f59e0b',
-  DELETE: '#ef4444', PATCH: '#a855f7',
+const ACTION_COLOR: Record<string, string> = {
+  'Giriş':                 '#3b82f6',
+  'Satış':                 '#22c55e',
+  'Stok Girişi':           '#a855f7',
+  'Stok Girişi (2.Kalite)':'#f59e0b',
+  'Stok Çıkışı':           '#ef4444',
+  'Özel Üretim Siparişi':  '#f59e0b',
+  'Rezervasyon Siparişi':  '#f59e0b',
+  'Rezervasyon Teslimi':   '#22c55e',
+  'İade':                  '#ec4899',
 };
-
-const statusColor = (s: number) =>
-  s < 300 ? '#22c55e' : s < 400 ? '#f59e0b' : s < 500 ? '#ef4444' : '#7c3aed';
 
 const fmtTime = (iso: string) =>
   new Date(iso).toLocaleString('tr-TR', {
@@ -66,7 +69,6 @@ export default function Loglama() {
       setFetchError('');
     } catch (e: any) {
       if (e.response?.status === 401) {
-        // Token geçersiz — çıkış yap
         setToken('');
         localStorage.removeItem(STORAGE_KEY);
       } else {
@@ -84,7 +86,7 @@ export default function Loglama() {
   useEffect(() => {
     if (!token) return;
     if (autoRefresh) {
-      intervalRef.current = setInterval(fetchLogs, 5000);
+      intervalRef.current = setInterval(fetchLogs, 10000);
     } else {
       if (intervalRef.current) clearInterval(intervalRef.current);
     }
@@ -94,15 +96,14 @@ export default function Loglama() {
   const filtered = logs.filter(l =>
     !filter ||
     l.user.toLowerCase().includes(filter.toLowerCase()) ||
-    l.path.toLowerCase().includes(filter.toLowerCase()) ||
-    l.method.toLowerCase().includes(filter.toLowerCase()) ||
-    String(l.status).includes(filter)
+    l.action.toLowerCase().includes(filter.toLowerCase()) ||
+    l.detail.toLowerCase().includes(filter.toLowerCase())
   );
 
   const stats = {
     total: logs.length,
-    errors: logs.filter(l => l.status >= 400).length,
-    users: [...new Set(logs.map(l => l.user).filter(u => u !== 'anonim'))].length,
+    errors: logs.filter(l => l.status === 'error').length,
+    users: [...new Set(logs.map(l => l.user))].length,
   };
 
   // Login ekranı
@@ -132,10 +133,8 @@ export default function Loglama() {
                 ❌ {loginError}
               </div>
             )}
-            <button
-              type="submit"
-              style={{ width: '100%', background: '#1d4ed8', border: 'none', borderRadius: '6px', padding: '10px', color: '#fff', fontSize: '14px', fontWeight: 600, cursor: 'pointer', fontFamily: 'monospace' }}
-            >
+            <button type="submit"
+              style={{ width: '100%', background: '#1d4ed8', border: 'none', borderRadius: '6px', padding: '10px', color: '#fff', fontSize: '14px', fontWeight: 600, cursor: 'pointer', fontFamily: 'monospace' }}>
               Giriş
             </button>
           </form>
@@ -149,9 +148,9 @@ export default function Loglama() {
     <div style={{ minHeight: '100vh', background: '#0f172a', color: '#e2e8f0', fontFamily: 'monospace', padding: '20px' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px', marginBottom: '16px' }}>
         <div>
-          <h1 style={{ fontSize: '18px', fontWeight: 700, color: '#f8fafc', margin: 0 }}>🖥️ WinDoor — Sistem Logları</h1>
+          <h1 style={{ fontSize: '18px', fontWeight: 700, color: '#f8fafc', margin: 0 }}>🖥️ WinDoor — İşlem Logları</h1>
           <p style={{ fontSize: '12px', color: '#64748b', margin: '4px 0 0' }}>
-            Son: {lastUpdate || '—'} &nbsp;·&nbsp; {stats.total} kayıt &nbsp;·&nbsp;
+            Son: {lastUpdate || '—'} &nbsp;·&nbsp; {stats.total} işlem &nbsp;·&nbsp;
             <span style={{ color: '#ef4444' }}>{stats.errors} hata</span> &nbsp;·&nbsp;
             <span style={{ color: '#93c5fd' }}>{stats.users} kullanıcı</span>
           </p>
@@ -162,7 +161,7 @@ export default function Loglama() {
             placeholder="Filtrele..."
             value={filter}
             onChange={e => setFilter(e.target.value)}
-            style={{ background: '#1e293b', border: '1px solid #334155', borderRadius: '6px', padding: '6px 10px', color: '#e2e8f0', fontSize: '12px', width: '200px', outline: 'none', fontFamily: 'monospace' }}
+            style={{ background: '#1e293b', border: '1px solid #334155', borderRadius: '6px', padding: '6px 10px', color: '#e2e8f0', fontSize: '12px', width: '180px', outline: 'none', fontFamily: 'monospace' }}
           />
           <button onClick={() => setAutoRefresh(a => !a)}
             style={{ background: autoRefresh ? '#166534' : '#374151', border: 'none', borderRadius: '6px', padding: '6px 12px', color: autoRefresh ? '#86efac' : '#9ca3af', fontSize: '12px', cursor: 'pointer', fontFamily: 'monospace' }}>
@@ -190,40 +189,46 @@ export default function Loglama() {
       ) : (
         <div style={{ background: '#1e293b', borderRadius: '10px', border: '1px solid #334155', overflow: 'hidden' }}>
           <div style={{ overflowX: 'auto', maxHeight: 'calc(100vh - 140px)', overflowY: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
               <thead style={{ position: 'sticky', top: 0, zIndex: 1 }}>
                 <tr style={{ background: '#0f172a', borderBottom: '1px solid #334155' }}>
-                  {['#', 'Zaman', 'Kullanıcı', 'IP', 'Method', 'Path', 'Status', 'Süre'].map(h => (
-                    <th key={h} style={{ padding: '10px 14px', textAlign: 'left', color: '#64748b', fontWeight: 600, whiteSpace: 'nowrap', fontSize: '11px', textTransform: 'uppercase' }}>{h}</th>
+                  {['#', 'Zaman', 'İşlem', 'Kullanıcı', 'Detay'].map(h => (
+                    <th key={h} style={{ padding: '10px 16px', textAlign: 'left', color: '#64748b', fontWeight: 600, fontSize: '11px', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {filtered.length === 0 ? (
-                  <tr><td colSpan={8} style={{ padding: '40px', textAlign: 'center', color: '#475569' }}>
-                    {logs.length === 0 ? 'Henüz log yok — sisteme istek geldikçe buraya düşecek' : 'Filtreyle eşleşen kayıt yok'}
+                  <tr><td colSpan={5} style={{ padding: '48px', textAlign: 'center', color: '#475569' }}>
+                    {logs.length === 0
+                      ? 'Henüz işlem yok — giriş, satış, stok, sipariş veya iade yapıldığında burada görünür'
+                      : 'Filtreyle eşleşen kayıt yok'}
                   </td></tr>
                 ) : filtered.map((log, idx) => (
-                  <tr key={log.id} style={{ borderBottom: '1px solid #1e293b', background: idx % 2 === 0 ? 'transparent' : '#172033' }}>
-                    <td style={{ padding: '7px 14px', color: '#475569' }}>{log.id}</td>
-                    <td style={{ padding: '7px 14px', color: '#94a3b8', whiteSpace: 'nowrap' }}>{fmtTime(log.timestamp)}</td>
-                    <td style={{ padding: '7px 14px' }}>
-                      <span style={{ background: log.user === 'anonim' ? '#292524' : '#1e3a5f', color: log.user === 'anonim' ? '#78716c' : '#93c5fd', padding: '2px 8px', borderRadius: '4px' }}>
+                  <tr key={log.id} style={{ borderBottom: '1px solid #1a2744', background: log.status === 'error' ? '#2d1515' : idx % 2 === 0 ? 'transparent' : '#172033' }}>
+                    <td style={{ padding: '10px 16px', color: '#475569', fontSize: '11px' }}>{log.id}</td>
+                    <td style={{ padding: '10px 16px', color: '#94a3b8', whiteSpace: 'nowrap', fontSize: '12px' }}>{fmtTime(log.timestamp)}</td>
+                    <td style={{ padding: '10px 16px', whiteSpace: 'nowrap' }}>
+                      <span style={{
+                        color: log.status === 'error' ? '#ef4444' : (ACTION_COLOR[log.action] || '#94a3b8'),
+                        fontWeight: 700,
+                        background: log.status === 'error' ? 'rgba(239,68,68,0.1)' : 'rgba(255,255,255,0.05)',
+                        padding: '3px 10px',
+                        borderRadius: '4px',
+                        fontSize: '12px',
+                      }}>
+                        {log.status === 'error' ? '❌ ' : ''}{log.action}
+                      </span>
+                    </td>
+                    <td style={{ padding: '10px 16px' }}>
+                      <span style={{ background: '#1e3a5f', color: '#93c5fd', padding: '2px 8px', borderRadius: '4px', fontSize: '12px' }}>
                         {log.user}
                       </span>
                     </td>
-                    <td style={{ padding: '7px 14px', color: '#64748b' }}>{log.ip}</td>
-                    <td style={{ padding: '7px 14px' }}>
-                      <span style={{ color: METHOD_COLOR[log.method] || '#94a3b8', fontWeight: 700 }}>{log.method}</span>
-                    </td>
-                    <td style={{ padding: '7px 14px', color: '#cbd5e1', maxWidth: '280px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={log.path}>
-                      {log.path}
-                    </td>
-                    <td style={{ padding: '7px 14px' }}>
-                      <span style={{ color: statusColor(log.status), fontWeight: 700 }}>{log.status}</span>
-                    </td>
-                    <td style={{ padding: '7px 14px', color: log.duration > 1000 ? '#f59e0b' : '#64748b' }}>
-                      {log.duration}ms
+                    <td style={{ padding: '10px 16px', color: '#cbd5e1', fontSize: '13px' }}>
+                      {log.error
+                        ? <span style={{ color: '#fca5a5' }}>{log.error}</span>
+                        : log.detail}
                     </td>
                   </tr>
                 ))}
@@ -234,7 +239,7 @@ export default function Loglama() {
       )}
 
       <p style={{ textAlign: 'center', fontSize: '11px', color: '#334155', marginTop: '12px' }}>
-        Bellekte tutulur · Deploy ile sıfırlanır · DB'ye kayıt yapılmaz
+        Bellekte tutulur · Deploy ile sıfırlanır · Veritabanına kayıt yapılmaz
       </p>
     </div>
   );

@@ -13,7 +13,6 @@ import customerRoutes from './routes/customers';
 import backupRoutes from './routes/backup';
 import logsRoutes from './routes/logs';
 import { authenticateToken, requireWriteAccess, requireAdmin } from './middleware/auth';
-import { requestLogger } from './lib/logger';
 
 const app = express();
 
@@ -27,7 +26,6 @@ app.use(cors({
 }));
 app.use(express.json());
 app.use(morgan('dev'));
-app.use(requestLogger);
 
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });

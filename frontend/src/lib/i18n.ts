@@ -243,6 +243,11 @@ export const translations = {
       noHistory: 'İade kaydı bulunamadı',
       products: 'Ürünler',
       reason: 'Sebep',
+      successSave: 'İade başarıyla kaydedildi! Stok güncellendi.',
+      errorFailed: 'İade işlemi başarısız',
+      errorCustomerRequired: 'Müşteri seçimi zorunludur',
+      errorReasonRequired: 'İade sebebi zorunludur',
+      errorProductRequired: 'En az bir ürün ekleyin',
     },
     // Customers
     customers: {
@@ -551,6 +556,11 @@ export const translations = {
       noHistory: 'No return records found',
       products: 'Products',
       reason: 'Reason',
+      successSave: 'Return saved successfully! Stock updated.',
+      errorFailed: 'Return failed',
+      errorCustomerRequired: 'Customer selection is required',
+      errorReasonRequired: 'Return reason is required',
+      errorProductRequired: 'Add at least one product',
     },
     customers: {
       title: 'Customers',

@@ -85,8 +85,8 @@ export default function Returns() {
       </div>
 
       <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg w-fit">
-        {(isAdmin ? ['new', 'history'] : ['history'] as const).map(tabKey => (
-          <button key={tabKey} onClick={() => setTab(tabKey)}
+        {(['new', 'history'] as const).filter(k => isAdmin || k !== 'new').map(tabKey => (
+          <button key={tabKey} onClick={() => setTab(tabKey as 'new' | 'history')}
             className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${tab === tabKey ? 'bg-white shadow text-gray-900' : 'text-gray-600 hover:text-gray-900'}`}>
             {tabKey === 'new' ? t.returns.newReturn : t.returns.history}
           </button>

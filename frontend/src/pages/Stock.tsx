@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { stockApi } from '../lib/api';
 import type { StockItem } from '../lib/api';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { useLang } from '../App';
+import { useLang, useAuth } from '../App';
 
 type ModalType = 'entry' | 'exit' | null;
 type SortKey = 'productName' | 'brand' | 'colorDimension' | 'quantity' | 'secondQualityQty' | 'status';
@@ -17,6 +17,7 @@ export default function Stock() {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const { t } = useLang();
+  const { isAdmin } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
 
   // Filters
@@ -173,10 +174,12 @@ export default function Stock() {
           <h1 className="text-3xl font-bold" style={{ color: 'var(--text)' }}>{t.stock.title}</h1>
           <p className="mt-1" style={{ color: 'var(--muted)' }}>{t.stock.subtitle}</p>
         </div>
-        <div className="flex space-x-3">
-          <button onClick={() => setModal('entry')} className="btn-primary">{t.stock.entry}</button>
-          <button onClick={() => setModal('exit')} className="btn-secondary">{t.stock.exit}</button>
-        </div>
+        {isAdmin && (
+          <div className="flex space-x-3">
+            <button onClick={() => setModal('entry')} className="btn-primary">{t.stock.entry}</button>
+            <button onClick={() => setModal('exit')} className="btn-secondary">{t.stock.exit}</button>
+          </div>
+        )}
       </div>
 
       {/* Filters */}
@@ -277,18 +280,20 @@ export default function Stock() {
                       <div className="flex justify-center space-x-2">
                         <button onClick={() => navigate(`/stock/${item.id}`)}
                           className="text-xs text-blue-600 hover:text-blue-700 font-medium">{t.stock.detail}</button>
-                        <button onClick={() => {
-                          setSelectedVariantId(item.id);
-                          setSelectedVariantLabel(`${item.productName} - ${item.color || ''} ${item.dimension}`.trim());
-                          setModal('entry');
-                        }}
-                          className="text-xs text-green-600 hover:text-green-700 font-medium">{t.stock.entryBtn}</button>
-                        <button onClick={() => {
-                          setSelectedVariantId(item.id);
-                          setSelectedVariantLabel(`${item.productName} - ${item.color || ''} ${item.dimension}`.trim());
-                          setModal('exit');
-                        }}
-                          className="text-xs text-red-600 hover:text-red-700 font-medium">{t.stock.exitBtn}</button>
+                        {isAdmin && <>
+                          <button onClick={() => {
+                            setSelectedVariantId(item.id);
+                            setSelectedVariantLabel(`${item.productName} - ${item.color || ''} ${item.dimension}`.trim());
+                            setModal('entry');
+                          }}
+                            className="text-xs text-green-600 hover:text-green-700 font-medium">{t.stock.entryBtn}</button>
+                          <button onClick={() => {
+                            setSelectedVariantId(item.id);
+                            setSelectedVariantLabel(`${item.productName} - ${item.color || ''} ${item.dimension}`.trim());
+                            setModal('exit');
+                          }}
+                            className="text-xs text-red-600 hover:text-red-700 font-medium">{t.stock.exitBtn}</button>
+                        </>}
                       </div>
                     </td>
                   </tr>

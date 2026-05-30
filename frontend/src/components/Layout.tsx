@@ -1,8 +1,7 @@
 import { type ReactNode, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import type { User } from '../lib/api';
-import { useTheme, useLang } from '../App';
-
+import { useTheme, useLang, useAuth } from '../App';
 
 interface LayoutProps {
   children: ReactNode;
@@ -10,7 +9,7 @@ interface LayoutProps {
   onLogout: () => void;
 }
 
-const navigation: Array<{ key: string; path: string; icon: string; exact?: boolean }> = [
+const baseNavigation: Array<{ key: string; path: string; icon: string; exact?: boolean }> = [
   { key: 'dashboard',    path: '/',              icon: '⊞',  exact: true },
   { key: 'products',     path: '/products',      icon: '⬡'              },
   { key: 'stock',        path: '/stock',         icon: '▤'              },
@@ -27,7 +26,12 @@ export default function Layout({ children, user, onLogout }: LayoutProps) {
   const location = useLocation();
   const { dark, toggle } = useTheme();
   const { lang, toggle: toggleLang, t } = useLang();
+  const { isAdmin } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  const navigation = isAdmin
+    ? [...baseNavigation, { key: 'users', path: '/users', icon: '👥' }]
+    : baseNavigation;
 
   const isActive = (path: string, exact?: boolean) => {
     if (exact) return location.pathname === path;

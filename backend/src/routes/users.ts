@@ -1,97 +1,127 @@
 import express from 'express';
 import { body, param } from 'express-validator';
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
 import { prisma } from '../lib/prisma';
 import { validate, getParam } from '../utils/helpers';
+import { authenticateToken, requireAdmin } from '../middleware/auth';
 
 const router = express.Router();
+const JWT_SECRET = process.env.JWT_SECRET || 'windoor-dev-secret';
 
 const userSelect = {
-  id: true, username: true, displayName: true, role: true, isActive: true, createdAt: true
+  id: true, username: true, displayName: true,
+  role: true, isActive: true, createdAt: true,
 };
 
-// GET /api/users
-router.get('/', async (req, res, next) => {
+// POST /api/users/login — public
+router.post('/login',
+  body('username').isString().isLength({ min: 1 }),
+  body('password').isString().isLength({ min: 1 }),
+  validate,
+  async (req, res, next) => {
+    try {
+      const { username, password } = req.body;
+      const user = await prisma.user.findUnique({ where: { username } });
+
+      if (!user) return res.status(401).json({ error: 'Kullanıcı adı veya şifre hatalı' });
+      if (!user.isActive) return res.status(403).json({ error: 'Hesap devre dışı' });
+
+      if (!user.password) {
+        // İlk giriş: şifreyi set et
+        const hashed = await bcrypt.hash(password, 10);
+        await prisma.user.update({ where: { id: user.id }, data: { password: hashed } });
+      } else {
+        const valid = await bcrypt.compare(password, user.password);
+        if (!valid) return res.status(401).json({ error: 'Kullanıcı adı veya şifre hatalı' });
+      }
+
+      const token = jwt.sign(
+        { id: user.id, username: user.username, role: user.role },
+        JWT_SECRET,
+        { expiresIn: '7d' }
+      );
+
+      res.json({
+        token,
+        user: {
+          id: user.id, username: user.username,
+          displayName: user.displayName, role: user.role, isActive: user.isActive,
+        },
+      });
+    } catch (error) { next(error); }
+  }
+);
+
+// GET /api/users — admin only
+router.get('/', authenticateToken, requireAdmin, async (req, res, next) => {
   try {
-    const users = await prisma.user.findMany({ select: userSelect, orderBy: { createdAt: 'desc' } });
+    const users = await prisma.user.findMany({ select: userSelect, orderBy: { createdAt: 'asc' } });
     res.json(users);
   } catch (error) { next(error); }
 });
 
-// GET /api/users/:id
-router.get('/:id', param('id').isUUID(), validate, async (req, res, next) => {
-  try {
-    const user = await prisma.user.findUnique({
-      where: { id: getParam(req.params.id) },
-      select: userSelect
-    });
-    if (!user) return res.status(404).json({ error: 'User not found' });
-    res.json(user);
-  } catch (error) { next(error); }
-});
-
-// POST /api/users
+// POST /api/users — admin only
 router.post('/',
-  body('username').isString().isLength({ min: 3, max: 50 }),
+  authenticateToken, requireAdmin,
+  body('username').isString().isLength({ min: 2, max: 50 }),
   body('displayName').isString().isLength({ min: 1, max: 100 }),
-  body('role').optional().isString(),
+  body('password').isString().isLength({ min: 6 }),
+  body('role').isIn(['admin', 'user']),
   validate,
   async (req, res, next) => {
     try {
-      const { username, displayName, role } = req.body;
+      const { username, displayName, password, role } = req.body;
       const existing = await prisma.user.findUnique({ where: { username } });
-      if (existing) return res.status(400).json({ error: 'Username already exists' });
-
+      if (existing) return res.status(409).json({ error: 'Bu kullanıcı adı zaten alınmış' });
+      const hashed = await bcrypt.hash(password, 10);
       const user = await prisma.user.create({
-        data: { username, displayName, role },
-        select: userSelect
+        data: { username, displayName, password: hashed, role },
+        select: userSelect,
       });
       res.status(201).json(user);
     } catch (error) { next(error); }
   }
 );
 
-// PUT /api/users/:id
+// PUT /api/users/:id — admin only
 router.put('/:id',
+  authenticateToken, requireAdmin,
   param('id').isUUID(),
   body('displayName').optional().isString().isLength({ min: 1, max: 100 }),
-  body('role').optional().isString(),
+  body('password').optional().isString().isLength({ min: 6 }),
+  body('role').optional().isIn(['admin', 'user']),
   body('isActive').optional().isBoolean(),
   validate,
   async (req, res, next) => {
     try {
-      const { displayName, role, isActive } = req.body;
+      const { displayName, password, role, isActive } = req.body;
+      const data: any = {};
+      if (displayName !== undefined) data.displayName = displayName;
+      if (role !== undefined) data.role = role;
+      if (isActive !== undefined) data.isActive = isActive;
+      if (password) data.password = await bcrypt.hash(password, 10);
       const user = await prisma.user.update({
         where: { id: getParam(req.params.id) },
-        data: {
-          ...(displayName && { displayName }),
-          ...(role !== undefined && { role }),
-          ...(isActive !== undefined && { isActive })
-        },
-        select: userSelect
+        data,
+        select: userSelect,
       });
       res.json(user);
     } catch (error) { next(error); }
   }
 );
 
-// POST /api/users/login
-router.post('/login',
-  body('username').isString(),
+// DELETE /api/users/:id — admin only
+router.delete('/:id',
+  authenticateToken, requireAdmin,
+  param('id').isUUID(),
   validate,
   async (req, res, next) => {
     try {
-      const { username } = req.body;
-      let user = await prisma.user.findUnique({ where: { username }, select: userSelect });
-
-      if (!user) {
-        user = await prisma.user.create({
-          data: { username, displayName: username, isActive: true },
-          select: userSelect
-        });
-      }
-
-      if (!user.isActive) return res.status(403).json({ error: 'User is not active' });
-      res.json(user);
+      const id = getParam(req.params.id);
+      if (id === req.user!.id) return res.status(400).json({ error: 'Kendi hesabınızı silemezsiniz' });
+      await prisma.user.delete({ where: { id } });
+      res.status(204).send();
     } catch (error) { next(error); }
   }
 );

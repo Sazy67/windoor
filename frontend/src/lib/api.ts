@@ -4,28 +4,42 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
 
 export const api = axios.create({
   baseURL: API_BASE_URL,
-  headers: {
-    'Content-Type': 'application/json',
-  },
+  headers: { 'Content-Type': 'application/json' },
 });
 
-// Add request interceptor to include user ID
+// Request interceptor — Bearer token
 api.interceptors.request.use((config) => {
-  const user = localStorage.getItem('user');
-  if (user) {
-    const userData = JSON.parse(user);
-    config.headers['X-User-Id'] = userData.id;
-  }
+  const token = localStorage.getItem('token');
+  if (token) config.headers['Authorization'] = `Bearer ${token}`;
   return config;
 });
+
+// Response interceptor — 401 auto-logout
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      window.location.href = '/';
+    }
+    return Promise.reject(error);
+  }
+);
 
 // Types
 export interface User {
   id: string;
   username: string;
   displayName: string;
-  role?: string;
+  role: string;
   isActive: boolean;
+  createdAt?: string;
+}
+
+export interface AuthResponse {
+  token: string;
+  user: User;
 }
 
 export interface Product {
@@ -144,9 +158,14 @@ export interface ReservationOrderItem {
 
 // API Functions
 export const userApi = {
-  login: (username: string) => api.post<User>('/users/login', { username }),
+  login: (username: string, password: string) =>
+    api.post<AuthResponse>('/users/login', { username, password }),
   getUsers: () => api.get<User[]>('/users'),
-  createUser: (data: Partial<User>) => api.post<User>('/users', data),
+  createUser: (data: { username: string; displayName: string; password: string; role: string }) =>
+    api.post<User>('/users', data),
+  updateUser: (id: string, data: Partial<User & { password?: string }>) =>
+    api.put<User>(`/users/${id}`, data),
+  deleteUser: (id: string) => api.delete(`/users/${id}`),
 };
 
 export const customerApi = {

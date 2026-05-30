@@ -8,6 +8,7 @@ datasource db {
   provider  = "postgresql"
   url       = env("DATABASE_URL")
   directUrl = env("DIRECT_URL")
+  // directUrl sadece Neon production bağlantısında gerekli
 }
 
 // User entity for authentication and audit trail
@@ -15,7 +16,8 @@ model User {
   id          String   @id @default(uuid())
   username    String   @unique
   displayName String
-  role        String?  // For future RBAC
+  password    String?
+  role        String   @default("user")
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
 

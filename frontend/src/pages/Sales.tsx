@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { productApi, salesApi, customerApi, orderApi } from '../lib/api';
 import type { ProductVariant, Customer } from '../lib/api';
 import { useDebounce } from '../hooks/useDebounce';
-import { useLang } from '../App';
+import { useLang, useAuth } from '../App';
 
 interface CartItem {
   variant: ProductVariant;
@@ -16,6 +16,7 @@ const fmt = (v: number) => v.toLocaleString('tr-TR', { style: 'currency', curren
 export default function Sales() {
   const queryClient = useQueryClient();
   const { t } = useLang();
+  const { isAdmin } = useAuth();
 
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
@@ -387,28 +388,30 @@ export default function Sales() {
             <textarea value={notes} onChange={e => setNotes(e.target.value)} className="input-field" rows={2} placeholder={t.sales.notesPlaceholder} />
           </div>
 
-          <div className="flex space-x-3 mt-4">
-            <button
-              onClick={handleSale}
-              disabled={cart.length === 0 || (!customerSearch.trim() && !selectedCustomer) || createSaleMutation.isPending}
-              className="flex-1 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-3 px-4 rounded-lg transition-colors text-base"
-              style={{ backgroundColor: '#16a34a' }}
-              onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#15803d')}
-              onMouseLeave={e => (e.currentTarget.style.backgroundColor = '#16a34a')}
-            >
-              {createSaleMutation.isPending ? t.sales.processing : t.sales.sellBtn}
-            </button>
-            <button
-              onClick={handleCreateOrder}
-              disabled={cart.length === 0 || (!customerSearch.trim() && !selectedCustomer)}
-              className="flex-1 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-3 px-4 rounded-lg transition-colors text-base"
-              style={{ backgroundColor: '#2563eb' }}
-              onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#1d4ed8')}
-              onMouseLeave={e => (e.currentTarget.style.backgroundColor = '#2563eb')}
-            >
-              {t.sales.orderBtn}
-            </button>
-          </div>
+          {isAdmin && (
+            <div className="flex space-x-3 mt-4">
+              <button
+                onClick={handleSale}
+                disabled={cart.length === 0 || (!customerSearch.trim() && !selectedCustomer) || createSaleMutation.isPending}
+                className="flex-1 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-3 px-4 rounded-lg transition-colors text-base"
+                style={{ backgroundColor: '#16a34a' }}
+                onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#15803d')}
+                onMouseLeave={e => (e.currentTarget.style.backgroundColor = '#16a34a')}
+              >
+                {createSaleMutation.isPending ? t.sales.processing : t.sales.sellBtn}
+              </button>
+              <button
+                onClick={handleCreateOrder}
+                disabled={cart.length === 0 || (!customerSearch.trim() && !selectedCustomer)}
+                className="flex-1 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-3 px-4 rounded-lg transition-colors text-base"
+                style={{ backgroundColor: '#2563eb' }}
+                onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#1d4ed8')}
+                onMouseLeave={e => (e.currentTarget.style.backgroundColor = '#2563eb')}
+              >
+                {t.sales.orderBtn}
+              </button>
+            </div>
+          )}
 
           <div className="mt-2 text-xs text-gray-400 text-center">{t.sales.info}</div>
         </div>

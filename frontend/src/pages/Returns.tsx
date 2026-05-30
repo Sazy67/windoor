@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { stockApi, customerApi } from '../lib/api';
 import type { StockItem, Customer } from '../lib/api';
-import { useLang } from '../App';
+import { useLang, useAuth } from '../App';
 
 interface ReturnItem { variantId: string; variantLabel: string; quantity: number; isSecondQuality: boolean; }
 
@@ -11,6 +11,7 @@ const fmtDate = (d: string) => new Date(d).toLocaleString('tr-TR', { day: '2-dig
 export default function Returns() {
   const queryClient = useQueryClient();
   const { t } = useLang();
+  const { isAdmin } = useAuth();
   const [tab, setTab] = useState<'new' | 'history'>('new');
   const [custSearch, setCustSearch] = useState('');
   const [custSelected, setCustSelected] = useState<Customer | null>(null);
@@ -84,7 +85,7 @@ export default function Returns() {
       </div>
 
       <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg w-fit">
-        {(['new', 'history'] as const).map(tabKey => (
+        {(isAdmin ? ['new', 'history'] : ['history'] as const).map(tabKey => (
           <button key={tabKey} onClick={() => setTab(tabKey)}
             className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${tab === tabKey ? 'bg-white shadow text-gray-900' : 'text-gray-600 hover:text-gray-900'}`}>
             {tabKey === 'new' ? t.returns.newReturn : t.returns.history}

@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { productApi } from '../lib/api';
 import type { Product, ProductVariant } from '../lib/api';
 import { useDebounce } from '../hooks/useDebounce';
-import { useLang } from '../App';
+import { useLang, useAuth } from '../App';
 
 type ModalType = 'addProduct' | 'editProduct' | 'addVariant' | null;
 
@@ -17,6 +17,7 @@ const SUBCATEGORIES: Record<string, string[]> = {
 export default function Products() {
   const queryClient = useQueryClient();
   const { t } = useLang();
+  const { isAdmin } = useAuth();
   const [search, setSearch] = useState('');
   const [filterCategory, setFilterCategory] = useState('');
   const debouncedSearch = useDebounce(search, 500);
@@ -72,7 +73,7 @@ export default function Products() {
           <h1 className="text-3xl font-bold" style={{ color: 'var(--text)' }}>{t.products.title}</h1>
           <p className="mt-1" style={{ color: 'var(--muted)' }}>{t.products.subtitle}</p>
         </div>
-        <button onClick={() => { resetForm(); setModal('addProduct'); }} className="btn-primary">{t.products.newProduct}</button>
+        {isAdmin && <button onClick={() => { resetForm(); setModal('addProduct'); }} className="btn-primary">{t.products.newProduct}</button>}
       </div>
 
       <div className="card">
@@ -106,9 +107,11 @@ export default function Products() {
                 </div>
                 <div className="flex items-center space-x-2">
                   <span className="text-sm text-gray-500">{product.variants?.length || 0} {t.products.variants}</span>
-                  <button onClick={e => { e.stopPropagation(); setSelectedProduct(product); setModal('addVariant'); }} className="text-sm text-primary-600 hover:text-primary-700 font-medium px-2 py-1">{t.products.addVariant}</button>
-                  <button onClick={e => { e.stopPropagation(); openEdit(product); }} className="text-sm text-gray-600 hover:text-gray-900 px-2 py-1">{t.common.edit}</button>
-                  <button onClick={e => { e.stopPropagation(); if (confirm(t.products.confirmDeleteProduct)) deleteProductMutation.mutate(product.id); }} className="text-sm text-red-600 hover:text-red-700 px-2 py-1">{t.common.delete}</button>
+                  {isAdmin && <>
+                    <button onClick={e => { e.stopPropagation(); setSelectedProduct(product); setModal('addVariant'); }} className="text-sm text-primary-600 hover:text-primary-700 font-medium px-2 py-1">{t.products.addVariant}</button>
+                    <button onClick={e => { e.stopPropagation(); openEdit(product); }} className="text-sm text-gray-600 hover:text-gray-900 px-2 py-1">{t.common.edit}</button>
+                    <button onClick={e => { e.stopPropagation(); if (confirm(t.products.confirmDeleteProduct)) deleteProductMutation.mutate(product.id); }} className="text-sm text-red-600 hover:text-red-700 px-2 py-1">{t.common.delete}</button>
+                  </>}
                 </div>
               </div>
               {expandedProduct === product.id && product.variants && product.variants.length > 0 && (
@@ -137,7 +140,7 @@ export default function Products() {
                           <td className="px-4 py-2 text-sm text-center">{variant.stock?.quantity || 0}</td>
                           <td className="px-4 py-2 text-center">{stockStatus(variant)}</td>
                           <td className="px-4 py-2 text-center">
-                            <button onClick={() => { if (confirm(t.products.confirmDeleteVariant)) deleteVariantMutation.mutate(variant.id); }} className="text-xs text-red-600 hover:text-red-700">{t.common.delete}</button>
+                            {isAdmin && <button onClick={() => { if (confirm(t.products.confirmDeleteVariant)) deleteVariantMutation.mutate(variant.id); }} className="text-xs text-red-600 hover:text-red-700">{t.common.delete}</button>}
                           </td>
                         </tr>
                       ))}

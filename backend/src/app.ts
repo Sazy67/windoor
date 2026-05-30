@@ -2,7 +2,6 @@ import express from 'express';
 import cors from 'cors';
 import morgan from 'morgan';
 
-// Routes
 import productRoutes from './routes/products';
 import stockRoutes from './routes/stock';
 import salesRoutes from './routes/sales';
@@ -12,10 +11,10 @@ import reportRoutes from './routes/reports';
 import userRoutes from './routes/users';
 import customerRoutes from './routes/customers';
 import backupRoutes from './routes/backup';
+import { authenticateToken, requireWriteAccess, requireAdmin } from './middleware/auth';
 
 const app = express();
 
-// Middleware
 app.use(cors({
   origin: [
     'https://windoor-frontend.vercel.app',
@@ -27,29 +26,27 @@ app.use(cors({
 app.use(express.json());
 app.use(morgan('dev'));
 
-// Health check
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-// API Routes
-app.use('/api/products', productRoutes);
-app.use('/api/stock', stockRoutes);
-app.use('/api/sales', salesRoutes);
-app.use('/api/orders', orderRoutes);
-app.use('/api/returns', returnRoutes);
-app.use('/api/reports', reportRoutes);
+// Public: sadece login
 app.use('/api/users', userRoutes);
-app.use('/api/customers', customerRoutes);
-app.use('/api/backup', backupRoutes);
 
-// Error handling middleware
+// Protected routes
+app.use('/api/products',  authenticateToken, requireWriteAccess, productRoutes);
+app.use('/api/stock',     authenticateToken, requireWriteAccess, stockRoutes);
+app.use('/api/sales',     authenticateToken, requireWriteAccess, salesRoutes);
+app.use('/api/orders',    authenticateToken, requireWriteAccess, orderRoutes);
+app.use('/api/returns',   authenticateToken, requireWriteAccess, returnRoutes);
+app.use('/api/reports',   authenticateToken, reportRoutes);
+app.use('/api/customers', authenticateToken, requireWriteAccess, customerRoutes);
+app.use('/api/backup',    authenticateToken, requireAdmin, backupRoutes);
+
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
   console.error(err.stack);
   res.status(err.status || 500).json({
-    error: {
-      message: err.message || 'Internal Server Error',
-    }
+    error: { message: err.message || 'Internal Server Error' }
   });
 });
 

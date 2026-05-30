@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { userApi } from '../lib/api';
-import type { User } from '../lib/api';
+import type { AuthResponse } from '../lib/api';
 import { useTheme, useLang } from '../App';
 
-interface LoginProps { onLogin: (user: User) => void; }
+interface LoginProps { onLogin: (auth: AuthResponse) => void; }
 
 export default function Login({ onLogin }: LoginProps) {
   const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const { dark, toggle } = useTheme();
@@ -17,10 +18,11 @@ export default function Login({ onLogin }: LoginProps) {
     setError('');
     setLoading(true);
     try {
-      const response = await userApi.login(username);
+      const response = await userApi.login(username, password);
       onLogin(response.data);
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Login failed');
+      const msg = err.response?.data?.error || t.login.invalidCredentials;
+      setError(msg);
     } finally {
       setLoading(false);
     }
@@ -52,13 +54,14 @@ export default function Login({ onLogin }: LoginProps) {
             <label className="block text-sm font-medium mb-1.5" style={{ color: 'var(--text-2)' }}>{t.login.username}</label>
             <input type="text" value={username} onChange={e => setUsername(e.target.value)} placeholder={t.login.placeholder} required autoFocus className="input-field" />
           </div>
+          <div>
+            <label className="block text-sm font-medium mb-1.5" style={{ color: 'var(--text-2)' }}>{t.login.password}</label>
+            <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder={t.login.passwordPlaceholder} required className="input-field" />
+          </div>
           {error && <div className="px-4 py-3 rounded-xl text-sm" style={{ background: 'rgba(239,68,68,.1)', border: '1px solid rgba(239,68,68,.25)', color: '#ef4444' }}>{error}</div>}
-          <button type="submit" disabled={loading || !username.trim()} className="w-full btn-primary py-2.5 mt-2">
+          <button type="submit" disabled={loading || !username.trim() || !password.trim()} className="w-full btn-primary py-2.5 mt-2">
             {loading ? t.login.loggingIn : t.login.loginBtn}
           </button>
-          <p className="text-center text-xs" style={{ color: 'var(--muted)' }}>
-            {t.login.defaultUser}: <span style={{ color: 'var(--text-2)', fontWeight: 600 }}>admin</span>
-          </p>
         </form>
       </div>
     </div>

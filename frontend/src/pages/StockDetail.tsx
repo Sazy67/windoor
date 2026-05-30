@@ -1,13 +1,14 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useParams, useNavigate } from 'react-router-dom';
 import { reportApi, stockApi } from '../lib/api';
-import { useLang } from '../App';
+import { useLang, useAuth } from '../App';
 
 export default function StockDetail() {
   const { variantId } = useParams<{ variantId: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { t } = useLang();
+  const { isAdmin } = useAuth();
 
   const { data, isLoading, refetch } = useQuery({
     queryKey: ['variant-movements', variantId],
@@ -158,7 +159,7 @@ export default function StockDetail() {
                   <td className="px-4 py-3 text-sm text-gray-500 max-w-xs truncate">{m.notes || '-'}</td>
                   <td className="px-4 py-3 text-sm text-gray-600">{m.user}</td>
                   <td className="px-4 py-3 text-center">
-                    {(m.operation !== t.stockDetail.saleOperation && m.operation !== t.stockDetail.reservationOperation) ? (
+                    {isAdmin && (m.operation !== t.stockDetail.saleOperation && m.operation !== t.stockDetail.reservationOperation) ? (
                       <button onClick={() => handleDelete(m)}
                         disabled={deleteEntryMutation.isPending || deleteExitMutation.isPending}
                         className="text-xs text-red-500 hover:text-red-700 font-medium disabled:opacity-50">

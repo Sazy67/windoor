@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { orderApi, productApi, customerApi } from '../lib/api';
 import type { ProductVariant, Customer, Order } from '../lib/api';
-import { useLang } from '../App';
+import { useLang, useAuth } from '../App';
 
 type TabType = 'list' | 'custom' | 'reservation';
 interface CartItem { variant: ProductVariant; quantity: number; }
@@ -24,6 +24,7 @@ const fmtDate = (d: string) => new Date(d).toLocaleDateString('tr-TR');
 export default function Orders() {
   const queryClient = useQueryClient();
   const { t } = useLang();
+  const { isAdmin } = useAuth();
 
   const [tab, setTab] = useState<TabType>('list');
   const [filterType, setFilterType] = useState('');
@@ -188,10 +189,12 @@ export default function Orders() {
           <h1 className="text-3xl font-bold" style={{ color: 'var(--text)' }}>{t.orders.title}</h1>
           <p className="mt-1" style={{ color: 'var(--muted)' }}>{t.orders.subtitle}</p>
         </div>
-        <div className="flex space-x-3">
-          <button onClick={() => setTab('custom')} className="btn-primary">{t.orders.newCustom}</button>
-          <button onClick={() => setTab('reservation')} className="btn-secondary">{t.orders.newReservation}</button>
-        </div>
+        {isAdmin && (
+          <div className="flex space-x-3">
+            <button onClick={() => setTab('custom')} className="btn-primary">{t.orders.newCustom}</button>
+            <button onClick={() => setTab('reservation')} className="btn-secondary">{t.orders.newReservation}</button>
+          </div>
+        )}
       </div>
 
       <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg w-fit">
@@ -263,13 +266,13 @@ export default function Orders() {
                         </span>
                       </td>
                       <td className="px-4 py-3 text-center" onClick={e => e.stopPropagation()}>
-                        {order.orderType === 'Reservation' && order.status === 'Reserved' && (
+                        {isAdmin && order.orderType === 'Reservation' && order.status === 'Reserved' && (
                           <button onClick={() => { setDeliverModal(order); setDeliverNotes(''); }}
                             className="text-xs bg-green-600 hover:bg-green-700 text-white font-medium px-3 py-1.5 rounded-lg">
                             {t.orders.deliver}
                           </button>
                         )}
-                        {order.orderType === 'Custom' && NEXT_STATUS[order.status] && (
+                        {isAdmin && order.orderType === 'Custom' && NEXT_STATUS[order.status] && (
                           <button onClick={() => updateStatusMutation.mutate({ id: order.id, status: NEXT_STATUS[order.status] })}
                             disabled={updateStatusMutation.isPending}
                             className="text-xs text-blue-600 hover:text-blue-800 font-medium disabled:opacity-50">

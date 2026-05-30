@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { customerApi, reportApi } from '../lib/api';
 import type { Customer } from '../lib/api';
-import { useLang } from '../App';
+import { useLang, useAuth } from '../App';
 
 type ModalType = 'add' | 'edit' | null;
 const emptyForm = { name: '', phone: '', email: '', address: '' };
@@ -10,6 +10,7 @@ const emptyForm = { name: '', phone: '', email: '', address: '' };
 export default function Customers() {
   const queryClient = useQueryClient();
   const { t } = useLang();
+  const { isAdmin } = useAuth();
   const [search, setSearch] = useState('');
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [modal, setModal] = useState<ModalType>(null);
@@ -44,7 +45,7 @@ export default function Customers() {
           <h1 className="text-3xl font-bold" style={{ color: 'var(--text)' }}>{t.customers.title}</h1>
           <p className="mt-1" style={{ color: 'var(--muted)' }}>{t.customers.subtitle}</p>
         </div>
-        <button onClick={openAdd} className="btn-primary">{t.customers.newCustomer}</button>
+        {isAdmin && <button onClick={openAdd} className="btn-primary">{t.customers.newCustomer}</button>}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -66,10 +67,12 @@ export default function Customers() {
                       {customer.phone && <p className="text-xs text-gray-500">📞 {customer.phone}</p>}
                       {customer.email && <p className="text-xs text-gray-500 truncate">✉️ {customer.email}</p>}
                     </div>
-                    <div className="flex space-x-1 ml-2 flex-shrink-0">
-                      <button onClick={e => { e.stopPropagation(); setSelectedCustomer(customer); openEdit(customer); }} className="text-xs text-blue-600 hover:text-blue-800 px-1 py-0.5 rounded hover:bg-blue-50" title={t.common.edit}>✏️</button>
-                      <button onClick={e => { e.stopPropagation(); handleDelete(customer); }} className="text-xs text-red-500 hover:text-red-700 px-1 py-0.5 rounded hover:bg-red-50" title={t.common.delete}>🗑️</button>
-                    </div>
+                    {isAdmin && (
+                      <div className="flex space-x-1 ml-2 flex-shrink-0">
+                        <button onClick={e => { e.stopPropagation(); setSelectedCustomer(customer); openEdit(customer); }} className="text-xs text-blue-600 hover:text-blue-800 px-1 py-0.5 rounded hover:bg-blue-50" title={t.common.edit}>✏️</button>
+                        <button onClick={e => { e.stopPropagation(); handleDelete(customer); }} className="text-xs text-red-500 hover:text-red-700 px-1 py-0.5 rounded hover:bg-red-50" title={t.common.delete}>🗑️</button>
+                      </div>
+                    )}
                   </div>
                 </div>
               ))
@@ -108,10 +111,12 @@ export default function Customers() {
                       <p className="text-2xl font-bold text-green-600">{formatCurrency(history.totalSpent)}</p>
                       <p className="text-xs" style={{ color: 'var(--muted)' }}>{history.sales.length} {t.customers.sales} · {history.orders.length} {t.customers.orders}</p>
                     </div>
-                    <div className="flex space-x-2">
-                      <button onClick={() => openEdit(selectedCustomer)} className="btn-secondary text-sm py-1 px-3">✏️ {t.common.edit}</button>
-                      <button onClick={() => handleDelete(selectedCustomer)} className="btn-danger text-sm py-1 px-3">🗑️ {t.common.delete}</button>
-                    </div>
+                    {isAdmin && (
+                      <div className="flex space-x-2">
+                        <button onClick={() => openEdit(selectedCustomer)} className="btn-secondary text-sm py-1 px-3">✏️ {t.common.edit}</button>
+                        <button onClick={() => handleDelete(selectedCustomer)} className="btn-danger text-sm py-1 px-3">🗑️ {t.common.delete}</button>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>

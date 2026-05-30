@@ -22,21 +22,15 @@ async function main() {
 
   console.log('✅ Created user:', user.username);
 
-  // Create sample customers
-  const customer1 = await prisma.customer.create({
-    data: {
-      name: 'Ahmet Yılmaz',
-      phone: '+90 555 123 4567',
-      email: 'ahmet@example.com'
-    }
+  // Create sample customers (sadece yoksa ekle)
+  const existingCustomer1 = await prisma.customer.findFirst({ where: { email: 'ahmet@example.com' } });
+  const customer1 = existingCustomer1 ?? await prisma.customer.create({
+    data: { name: 'Ahmet Yılmaz', phone: '+90 555 123 4567', email: 'ahmet@example.com' }
   });
 
-  const customer2 = await prisma.customer.create({
-    data: {
-      name: 'Ayşe Demir',
-      phone: '+90 555 987 6543',
-      email: 'ayse@example.com'
-    }
+  const existingCustomer2 = await prisma.customer.findFirst({ where: { email: 'ayse@example.com' } });
+  const customer2 = existingCustomer2 ?? await prisma.customer.create({
+    data: { name: 'Ayşe Demir', phone: '+90 555 987 6543', email: 'ayse@example.com' }
   });
 
   console.log('✅ Created customers');

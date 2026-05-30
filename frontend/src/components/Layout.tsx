@@ -140,10 +140,10 @@ export default function Layout({ children, user, onLogout }: LayoutProps) {
           <button
             onClick={onLogout}
             title={t.common.logout}
-            className="text-sm transition-colors flex-shrink-0 p-1"
-            style={{ color: 'var(--muted-2)', minWidth: '32px', minHeight: '32px' }}
+            className="text-sm transition-colors flex-shrink-0 p-1 rounded"
+            style={{ color: 'var(--muted)', minWidth: '32px', minHeight: '32px' }}
             onMouseEnter={e => (e.currentTarget.style.color = '#ef4444')}
-            onMouseLeave={e => (e.currentTarget.style.color = 'var(--muted-2)')}
+            onMouseLeave={e => (e.currentTarget.style.color = 'var(--muted)')}
           >
             ⏻
           </button>

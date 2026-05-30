@@ -11,6 +11,7 @@ import returnRoutes from './routes/returns';
 import reportRoutes from './routes/reports';
 import userRoutes from './routes/users';
 import customerRoutes from './routes/customers';
+import backupRoutes from './routes/backup';
 
 const app = express();
 
@@ -40,6 +41,7 @@ app.use('/api/returns', returnRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/customers', customerRoutes);
+app.use('/api/backup', backupRoutes);
 
 // Error handling middleware
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {

@@ -3,6 +3,8 @@ import { Link, useLocation } from 'react-router-dom';
 import type { User } from '../lib/api';
 import { useTheme, useLang } from '../App';
 
+const API_BASE = import.meta.env.VITE_API_URL || '/api';
+
 interface LayoutProps {
   children: ReactNode;
   user: User;
@@ -27,6 +29,23 @@ export default function Layout({ children, user, onLogout }: LayoutProps) {
   const { dark, toggle } = useTheme();
   const { lang, toggle: toggleLang, t } = useLang();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [backupLoading, setBackupLoading] = useState(false);
+
+  const handleBackup = async () => {
+    setBackupLoading(true);
+    try {
+      const res = await fetch(`${API_BASE}/backup`);
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `windoor-backup-${new Date().toISOString().slice(0, 10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } finally {
+      setBackupLoading(false);
+    }
+  };
 
   const isActive = (path: string, exact?: boolean) => {
     if (exact) return location.pathname === path;
@@ -121,6 +140,19 @@ export default function Layout({ children, user, onLogout }: LayoutProps) {
         >
           <span className="text-base">{dark ? '☀️' : '🌙'}</span>
           <span className="font-medium">{dark ? t.common.lightMode : t.common.darkMode}</span>
+        </button>
+
+        {/* Backup */}
+        <button
+          onClick={handleBackup}
+          disabled={backupLoading}
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg mb-2 text-sm transition-all disabled:opacity-60"
+          style={{ color: 'var(--muted)', background: 'transparent', border: '1px solid var(--border)', minHeight: '44px', fontFamily: 'inherit', cursor: backupLoading ? 'wait' : 'pointer' }}
+          onMouseEnter={e => { if (!backupLoading) { (e.currentTarget as HTMLElement).style.background = 'var(--sidebar-hover-bg)'; (e.currentTarget as HTMLElement).style.color = 'var(--text)'; } }}
+          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent'; (e.currentTarget as HTMLElement).style.color = 'var(--muted)'; }}
+        >
+          <span className="text-base">{backupLoading ? '⏳' : '💾'}</span>
+          <span className="font-medium">{backupLoading ? (lang === 'tr' ? 'İndiriliyor...' : 'Downloading...') : (lang === 'tr' ? 'Yedek Al' : 'Backup')}</span>
         </button>
 
         {/* User card */}

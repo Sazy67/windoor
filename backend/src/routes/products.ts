@@ -24,7 +24,7 @@ router.get('/',
       const limit = req.query.limit ? parseInt(req.query.limit as string) : undefined;
 
       const where: any = {};
-      if (search) where.name = { contains: search as string };
+      if (search) where.name = { contains: search as string, mode: 'insensitive' };
       if (category) where.category = category;
       if (brand) where.brand = brand;
 

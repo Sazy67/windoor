@@ -31,11 +31,11 @@ router.get('/',
 
       const where: any = {};
       if (color) where.color = color;
-      if (dimension) where.dimension = { contains: dimension as string };
+      if (dimension) where.dimension = { contains: dimension as string, mode: 'insensitive' };
       if (search) {
         where.OR = [
-          { sku: { contains: search as string } },
-          { product: { name: { contains: search as string } } },
+          { sku: { contains: search as string, mode: 'insensitive' } },
+          { product: { name: { contains: search as string, mode: 'insensitive' } } },
         ];
       }
 

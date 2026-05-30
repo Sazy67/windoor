@@ -15,6 +15,7 @@ import StockDetail from './pages/StockDetail';
 import SalesHistory from './pages/SalesHistory';
 import Help from './pages/Help';
 import Users from './pages/Users';
+import Loglama from './pages/Loglama';
 import type { User, AuthResponse } from './lib/api';
 import { translations, type Lang } from './lib/i18n';
 
@@ -91,6 +92,15 @@ function App() {
     isAdmin: user?.role === 'admin',
     canWrite: user?.role === 'admin',
   };
+
+  // /loglama sayfası — login gerektirmez ama token olmadan API'ye erişilemez
+  if (window.location.pathname === '/loglama') {
+    return (
+      <QueryClientProvider client={queryClient}>
+        <Loglama />
+      </QueryClientProvider>
+    );
+  }
 
   if (!user) {
     return (

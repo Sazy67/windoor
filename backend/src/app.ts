@@ -11,7 +11,9 @@ import reportRoutes from './routes/reports';
 import userRoutes from './routes/users';
 import customerRoutes from './routes/customers';
 import backupRoutes from './routes/backup';
+import logsRoutes from './routes/logs';
 import { authenticateToken, requireWriteAccess, requireAdmin } from './middleware/auth';
+import { requestLogger } from './lib/logger';
 
 const app = express();
 
@@ -25,6 +27,7 @@ app.use(cors({
 }));
 app.use(express.json());
 app.use(morgan('dev'));
+app.use(requestLogger);
 
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
@@ -42,6 +45,7 @@ app.use('/api/returns',   authenticateToken, requireWriteAccess, returnRoutes);
 app.use('/api/reports',   authenticateToken, reportRoutes);
 app.use('/api/customers', authenticateToken, requireWriteAccess, customerRoutes);
 app.use('/api/backup',    authenticateToken, requireAdmin, backupRoutes);
+app.use('/api/logs',      logsRoutes);
 
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
   console.error(err.stack);

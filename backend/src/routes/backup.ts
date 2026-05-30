@@ -5,6 +5,21 @@ const router = express.Router();
 
 // GET /api/backup — tüm veritabanını JSON olarak indir
 router.get('/', async (req, res, next) => {
+  // Giriş yapmış kullanıcı kontrolü
+  const userId = req.headers['x-user-id'] as string | undefined;
+  if (!userId) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+
+  try {
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user || !user.isActive) {
+      return res.status(403).json({ error: 'Forbidden' });
+    }
+  } catch {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+
   try {
     const [
       users,

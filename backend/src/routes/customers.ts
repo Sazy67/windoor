@@ -1,6 +1,6 @@
 import express from 'express';
 import { body, param } from 'express-validator';
-import { prisma } from '../index';
+import { prisma } from '../lib/prisma';
 import { validate, getParam } from '../utils/helpers';
 
 const router = express.Router();

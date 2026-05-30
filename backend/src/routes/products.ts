@@ -1,6 +1,6 @@
 import express from 'express';
 import { body, param, query } from 'express-validator';
-import { prisma } from '../index';
+import { prisma } from '../lib/prisma';
 import variantRoutes from './variants';
 import { validate, getParam } from '../utils/helpers';
 

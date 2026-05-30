@@ -1,7 +1,6 @@
 import express from 'express';
 import cors from 'cors';
 import morgan from 'morgan';
-import path from 'path';
 
 // Routes
 import productRoutes from './routes/products';
@@ -34,18 +33,6 @@ app.use('/api/returns', returnRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/customers', customerRoutes);
-
-// Serve frontend static files if built
-const publicDir = path.join(__dirname, '..', 'public');
-app.use(express.static(publicDir));
-
-// SPA fallback
-app.get('*', (req, res) => {
-  const indexPath = path.join(publicDir, 'index.html');
-  res.sendFile(indexPath, (err) => {
-    if (err) res.status(404).json({ error: 'Not found' });
-  });
-});
 
 // Error handling middleware
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {

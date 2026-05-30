@@ -217,6 +217,11 @@ export default function Layout({ children, user, onLogout }: LayoutProps) {
         <main className="flex-1 overflow-auto p-4 lg:p-8">
           <div className="max-w-7xl mx-auto">{children}</div>
         </main>
+
+        {/* Global footer */}
+        <footer className="px-4 lg:px-8 py-2 text-center text-xs flex-shrink-0" style={{ borderTop: '1px solid var(--border)', color: 'var(--muted)', background: 'var(--header-bg)' }}>
+          © {new Date().getFullYear()} WinDoor · {lang === 'tr' ? 'Suat Ayaz tarafından geliştirildi' : 'Developed by Suat Ayaz'}
+        </footer>
       </div>
     </div>
   );

@@ -1,10 +1,29 @@
 import { useState } from 'react';
 import { useLang } from '../App';
 
+const API_BASE = import.meta.env.VITE_API_URL || '/api';
+
 export default function Help() {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const [activeSection, setActiveSection] = useState(0);
   const [openItem, setOpenItem] = useState<number | null>(null);
+  const [backupLoading, setBackupLoading] = useState(false);
+
+  const handleBackup = async () => {
+    setBackupLoading(true);
+    try {
+      const res = await fetch(`${API_BASE}/backup`);
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `windoor-backup-${new Date().toISOString().slice(0, 10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } finally {
+      setBackupLoading(false);
+    }
+  };
 
   const helpSections = t.help.sections;
   const section = helpSections[activeSection];
@@ -67,9 +86,24 @@ export default function Help() {
         </div>
       </div>
 
-      <div className="rounded-xl px-5 py-3 text-xs flex items-center justify-between" style={{ background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--muted)' }}>
-        <span>{t.help.footer}</span>
-        <span>{helpSections.reduce((s, c) => s + c.items.length, 0)} {t.help.topics_count} · {helpSections.length} {t.help.sections_count}</span>
+      <div className="rounded-xl px-5 py-3 flex items-center justify-between gap-4 flex-wrap" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
+        <span className="text-xs" style={{ color: 'var(--muted)' }}>
+          © {new Date().getFullYear()} WinDoor · {lang === 'tr' ? 'Suat Ayaz tarafından geliştirildi' : 'Developed by Suat Ayaz'}
+        </span>
+        <div className="flex items-center gap-4">
+          <button
+            onClick={handleBackup}
+            disabled={backupLoading}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-medium transition-all disabled:opacity-60"
+            style={{ background: 'var(--brand)', color: '#fff', border: 'none', cursor: backupLoading ? 'wait' : 'pointer' }}
+          >
+            <span>{backupLoading ? '⏳' : '💾'}</span>
+            <span>{backupLoading ? (lang === 'tr' ? 'İndiriliyor...' : 'Downloading...') : (lang === 'tr' ? 'Yedek Al' : 'Backup')}</span>
+          </button>
+          <span className="text-xs" style={{ color: 'var(--muted)' }}>
+            {helpSections.reduce((s, c) => s + c.items.length, 0)} {t.help.topics_count} · {helpSections.length} {t.help.sections_count}
+          </span>
+        </div>
       </div>
     </div>
   );

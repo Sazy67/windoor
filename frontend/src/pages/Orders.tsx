@@ -226,6 +226,7 @@ export default function Orders() {
             </div>
           </div>
           <div className="card p-0 overflow-hidden">
+            <div className="overflow-x-auto">
             <table className="w-full">
               <thead className="bg-gray-50 border-b">
                 <tr>
@@ -309,6 +310,7 @@ export default function Orders() {
                 )}
               </tbody>
             </table>
+            </div>
           </div>
         </div>
       )}

@@ -318,7 +318,7 @@ export default function Sales() {
           </div>
 
           <div
-            className="border rounded-lg flex-1 overflow-hidden"
+            className="border rounded-lg flex-1 overflow-hidden overflow-x-auto"
             style={{ minHeight: '200px', maxHeight: '300px', overflowY: 'auto' }}
             onClick={() => setShowCustomerDropdown(false)}
           >

@@ -63,7 +63,7 @@ export default function SalesHistory() {
       </div>
 
       {sales && sales.length > 0 && (
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div className="card text-center">
             <p className="text-sm" style={{ color: 'var(--muted)' }}>{t.reports.totalTransactions}</p>
             <p className="text-2xl font-bold" style={{ color: 'var(--text)' }}>{sales.length}</p>

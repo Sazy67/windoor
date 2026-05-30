@@ -115,7 +115,7 @@ export default function Products() {
                 </div>
               </div>
               {expandedProduct === product.id && product.variants && product.variants.length > 0 && (
-                <div className="border-t">
+                <div className="border-t overflow-x-auto">
                   <table className="w-full">
                     <thead className="bg-gray-50">
                       <tr>

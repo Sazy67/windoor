@@ -9,6 +9,7 @@ interface LogEntry {
   action: string;
   user: string;
   detail: string;
+  ip: string;
   status: 'ok' | 'error';
   error?: string;
 }
@@ -192,14 +193,14 @@ export default function Loglama() {
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
               <thead style={{ position: 'sticky', top: 0, zIndex: 1 }}>
                 <tr style={{ background: '#0f172a', borderBottom: '1px solid #334155' }}>
-                  {['#', 'Zaman', 'İşlem', 'Kullanıcı', 'Detay'].map(h => (
+                  {['#', 'Zaman', 'İşlem', 'Kullanıcı', 'IP', 'Detay'].map(h => (
                     <th key={h} style={{ padding: '10px 16px', textAlign: 'left', color: '#64748b', fontWeight: 600, fontSize: '11px', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {filtered.length === 0 ? (
-                  <tr><td colSpan={5} style={{ padding: '48px', textAlign: 'center', color: '#475569' }}>
+                  <tr><td colSpan={6} style={{ padding: '48px', textAlign: 'center', color: '#475569' }}>
                     {logs.length === 0
                       ? 'Henüz işlem yok — giriş, satış, stok, sipariş veya iade yapıldığında burada görünür'
                       : 'Filtreyle eşleşen kayıt yok'}
@@ -224,6 +225,9 @@ export default function Loglama() {
                       <span style={{ background: '#1e3a5f', color: '#93c5fd', padding: '2px 8px', borderRadius: '4px', fontSize: '12px' }}>
                         {log.user}
                       </span>
+                    </td>
+                    <td style={{ padding: '10px 16px', color: '#64748b', fontSize: '12px', fontFamily: 'monospace', whiteSpace: 'nowrap' }}>
+                      {log.ip || '-'}
                     </td>
                     <td style={{ padding: '10px 16px', color: '#cbd5e1', fontSize: '13px' }}>
                       {log.error

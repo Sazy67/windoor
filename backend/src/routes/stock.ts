@@ -2,7 +2,7 @@ import express from 'express';
 import { body, param, query } from 'express-validator';
 import { prisma } from '../lib/prisma';
 import { validate, getParam } from '../utils/helpers';
-import { addLog } from '../lib/logger';
+import { addLog, getIP } from '../lib/logger';
 
 const router = express.Router();
 
@@ -195,6 +195,7 @@ router.post('/entry',
         action: isSecondQuality ? 'Stok Girişi (2.Kalite)' : 'Stok Girişi',
         user: req.user?.username || '-',
         detail: `${variantInfo?.product?.name || variantId} · ${quantity} adet`,
+        ip: getIP(req),
         status: 'ok',
       });
 
@@ -247,6 +248,7 @@ router.post('/exit',
         action: 'Stok Çıkışı',
         user: req.user?.username || '-',
         detail: `${variantInfo2?.product?.name || variantId} · ${quantity} adet · Sebep: ${reason}`,
+        ip: getIP(req),
         status: 'ok',
       });
 

@@ -2,7 +2,7 @@ import express from 'express';
 import { body, param, query } from 'express-validator';
 import { prisma } from '../lib/prisma';
 import { validate, getParam } from '../utils/helpers';
-import { addLog } from '../lib/logger';
+import { addLog, getIP } from '../lib/logger';
 
 const router = express.Router();
 
@@ -114,6 +114,7 @@ router.post('/',
         action: 'İade',
         user: req.user?.username || '-',
         detail: `${customer.name} · ${items.length} ürün · ${reason}`,
+        ip: getIP(req),
         status: 'ok',
       });
       res.status(201).json(returnRecord);

@@ -1,9 +1,10 @@
 export interface LogEntry {
   id: number;
   timestamp: string;
-  action: string;     // 'Satış', 'Stok Girişi', 'Giriş' vb.
+  action: string;
   user: string;
-  detail: string;     // işlem detayı
+  detail: string;
+  ip: string;
   status: 'ok' | 'error';
   error?: string;
 }
@@ -19,4 +20,10 @@ export function addLog(entry: Omit<LogEntry, 'id'>) {
 
 export function getLogs(): LogEntry[] {
   return logs;
+}
+
+import { Request } from 'express';
+export function getIP(req: Request): string {
+  const forwarded = req.headers['x-forwarded-for'] as string | undefined;
+  return forwarded?.split(',')[0].trim() || req.ip || '-';
 }

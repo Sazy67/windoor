@@ -1,7 +1,5 @@
 {
   "version": 2,
-  "outputDirectory": "frontend/dist",
-  "buildCommand": "cd frontend && npm install && npm run build",
   "builds": [
     {
       "src": "backend/api/index.ts",
@@ -11,6 +9,13 @@
           "backend/src/**",
           "backend/prisma/**"
         ]
+      }
+    },
+    {
+      "src": "frontend/package.json",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "dist"
       }
     }
   ],
